@@ -107,7 +107,7 @@ app.get('/oauth2callback', function(request, response) {
                             // Since auth_doc is new, no id is passed
                             db.getAuthDocument(auth_doc)
                             .then(() => console.log('Created doc'))
-                            .catch((error) => console.log('Error: ' + error));
+                            .catch((error) => console.log('Error: ' + JSON.stringify(error)));
                         }
                     })
                     //.then(() => db.getAuthDocument(auth_doc)) // get/create doc
