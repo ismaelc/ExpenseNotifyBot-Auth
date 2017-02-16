@@ -78,7 +78,7 @@ app.get('/oauth2callback', function(request, response) {
                     'google_auth': auth,
                     'bot_id': state,
                     //'id': db.uuid()
-                    'id': state.address.serviceUrl + '/' + state.address.channelId + '/' + state.address.user.id
+                    'id': state.address.serviceUrl + state.address.channelId + '/' + state.address.user.id
                 }
 
                 // Get/create database
@@ -105,7 +105,9 @@ app.get('/oauth2callback', function(request, response) {
                         else {
                             // This looks for documentUrl based on document.id
                             // Since auth_doc is new, no id is passed
-                            db.getAuthDocument(auth_doc);
+                            db.getAuthDocument(auth_doc)
+                            .then(() => console.log('Created doc'))
+                            .catch((error) => console.log('Error: ' + error));
                         }
                     })
                     //.then(() => db.getAuthDocument(auth_doc)) // get/create doc
