@@ -3,6 +3,7 @@ var app = express();
 var google = require('./google.js');
 var tokenizer = require('./expense_tokenizer.js');
 var db = require('./documentdb.js');
+var queue = require('./queue.js');
 
 app.set('port', (process.env.PORT || 5000));
 
