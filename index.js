@@ -27,7 +27,7 @@ app.get('/oauth2callback', function(request, response) {
 
     var state = request.query['state'];
     if(!state) {
-
+        //TODO: Fix these passed render data (instead of 'welcome')
         response.render('pages/welcome', {
             'welcome': 'No state passed'
         });
@@ -77,7 +77,8 @@ app.get('/oauth2callback', function(request, response) {
                 var auth_doc = {
                     'google_auth': auth,
                     'bot_id': state,
-                    'id': db.uuid()
+                    //'id': db.uuid()
+                    'id': state.address.serviceUrl + '/' + state.address.channelId + '/' + state.address.user.id
                 }
 
                 // Get/create database
