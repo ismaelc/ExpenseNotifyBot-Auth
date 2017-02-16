@@ -101,13 +101,13 @@ function getAuthDocument(document) {
     });
 };
 
-function queryCollection(token, channelId, serviceUrl) {
+function queryCollection(serviceUrl, channelId, user_id) {
     console.log(`Querying collection through index:\n${config.collection.id}`);
 
     return new Promise((resolve, reject) => {
-        var query = 'SELECT r.google_auth, r.bot_id, r.id FROM root r WHERE r.google_auth.credentials.access_token = "' + token + '"';
-        //if (channelId) query += ' AND r.bot_id.address.channelId = "' + channelId + '"';
-        //if (serviceUrl) query += ' AND r.bot_id.address.serviceUrl = "' + serviceUrl + '"';
+        var query = 'SELECT r.google_auth, r.bot_id, r.id FROM root r WHERE r.bot_id.address.user.id = "' + user_id + '"';
+        query += ' AND r.bot_id.address.channelId = "' + channelId + '"';
+        query += ' AND r.bot_id.address.serviceUrl = "' + serviceUrl + '"';
         client.queryDocuments(
             collectionUrl,
             //'SELECT VALUE r.children FROM root r WHERE r.lastName = "Andersen"'
