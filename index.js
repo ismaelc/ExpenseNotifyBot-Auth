@@ -89,7 +89,10 @@ app.get('/oauth2callback', function(request, response) {
                         // Query db based on passed state - token/channelId/serviceUrl
                         console.log('Generated auth_doc: ' + JSON.stringify(auth_doc));
                         return db.queryCollection(
-                            auth_doc.google_auth.credentials.access_token
+                            //auth_doc.google_auth.credentials.access_token
+                            auth_doc.bot_id.address.serviceUrl,
+                            auth_doc.bot_id.address.channelId,
+                            auth_doc.bot_id.address.user.id
                         );
                     }) // Get matching token/doc
                     .then((doc_arr) => {
