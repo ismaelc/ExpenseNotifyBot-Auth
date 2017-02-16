@@ -26,7 +26,7 @@ app.get('/oauth2callback', function(request, response) {
     //console.log('Code: ' + code);
 
     var state = request.query['state'];
-    if(!state) {
+    if (!state) {
         //TODO: Fix these passed render data (instead of 'welcome')
         response.render('pages/welcome', {
             'welcome': 'No state passed'
@@ -78,7 +78,7 @@ app.get('/oauth2callback', function(request, response) {
                     'google_auth': auth,
                     'bot_id': state,
                     'id': db.uuid()
-                    //'id': state.address.serviceUrl + state.address.channelId + '/' + state.address.user.id
+                        //'id': state.address.serviceUrl + state.address.channelId + '/' + state.address.user.id
                 }
 
                 // Get/create database
@@ -109,9 +109,47 @@ app.get('/oauth2callback', function(request, response) {
                             // This looks for documentUrl based on document.id
                             // Since auth_doc is new, no id is passed
                             db.getAuthDocument(auth_doc)
-                            .then(() => console.log('Created doc'))
-                            .catch((error) => console.log('Error: ' + JSON.stringify(error)));
+                                .then(() => console.log('Created doc'))
+                                .catch((error) => console.log('Error: ' + JSON.stringify(error)));
                         }
+                    })
+                    .then(() => {
+
+                        var payload = {
+                            'origin': 'bot',
+                            'intent': 'login'
+                        };
+
+                        var message = {
+                            'address': state.address,
+                            'payload': payload
+                        }
+
+                        queue.pushMessageQFunc(message, 'expensenotifybotd3giz3_STORAGE', 'js-queue-items-for-bot')
+                            .then(() => {
+                                /*
+                                session.send('Pushed: ' + JSON.stringify(message));
+                                session.endDialog();
+                                */
+                                console.log('Message pushed to queue');
+                                //context.done(null, 'Http trigger done');
+
+                                response.render('pages/welcome', {
+                                    'welcome': 'User01'
+                                });
+                            })
+                            .catch((error) => {
+
+                                //session.send('Error: ' + error);
+                                //session.endDialog();
+
+                                console.log('Error: ' + error);
+                                //context.done(error, null);
+                                response.render('pages/welcome', {
+                                    'welcome': error
+                                });
+                            })
+
                     })
                     //.then(() => db.getAuthDocument(auth_doc)) // get/create doc
                     .then(() => {
