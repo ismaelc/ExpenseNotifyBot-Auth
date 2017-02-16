@@ -23,7 +23,13 @@ app.get('/login', function(request, response) {
 //TODO: Bring documentdb.js to save tokens to DocumentDB
 app.get('/oauth2callback', function(request, response) {
   var code = request.query['code'];
-  console.log('Code: ' + code);
+  //console.log('Code: ' + code);
+
+  var state = request.session.state;
+  state = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
+  //console.log('Retrieved state: ' + JSON.stringify(state));
+  request.session.state = null; // remove state?
+
   google.retrieveAccessToken(code, function(err, auth) {
     if(!err) {
       /*
@@ -63,7 +69,7 @@ app.get('/oauth2callback', function(request, response) {
       // Capturing this mapping to be saved in DB
       var auth_doc = {
           'google_auth': auth,
-          'bot_id': 'test',
+          'bot_id': state,
           'id': db.uuid()
       }
 
