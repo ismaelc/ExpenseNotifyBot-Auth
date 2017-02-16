@@ -35,7 +35,7 @@ app.get('/oauth2callback', function(request, response) {
 
         state = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
         //console.log('Retrieved state: ' + JSON.stringify(state));
-        request.session.state = null; // remove state?
+        //request.session.state = null; // remove state?
 
         google.retrieveAccessToken(code, function(err, auth) {
             if (!err) {
