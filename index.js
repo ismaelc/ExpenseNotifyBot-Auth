@@ -25,8 +25,8 @@ app.get('/oauth2callback', function(request, response) {
     var code = request.query['code'];
     //console.log('Code: ' + code);
 
-    var state = request.session.state;
-    if (!state) {
+    var state;
+    if(typeof request.session.state == 'undefined') {
 
         response.render('pages/welcome', {
             'welcome': 'No state passed'
