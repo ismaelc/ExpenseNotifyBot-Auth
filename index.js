@@ -77,8 +77,8 @@ app.get('/oauth2callback', function(request, response) {
                 var auth_doc = {
                     'google_auth': auth,
                     'bot_id': state,
-                    //'id': db.uuid()
-                    'id': state.address.serviceUrl + state.address.channelId + '/' + state.address.user.id
+                    'id': db.uuid()
+                    //'id': state.address.serviceUrl + state.address.channelId + '/' + state.address.user.id
                 }
 
                 // Get/create database
