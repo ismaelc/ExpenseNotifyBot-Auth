@@ -38,45 +38,13 @@ app.get('/oauth2callback', function(request, response) {
         //console.log('Retrieved state: ' + JSON.stringify(state));
         //request.session.state = null; // remove state?
 
-        google.retrieveAccessToken(code, function(err, auth) {
+        //google.retrieveAccessToken(code, function(err, auth) {
+        google.returnAccessTokens(code, function(err, tokens) {
             if (!err) {
-                /*
-                google.listLabels(auth, function(err, data) {
-                  if(!err) response.send(data);
-                  else response.send(err);
-                });
-                */
-
-                /*
-                var options = {
-                  auth: auth,
-                  userId: 'me',
-                  q: "receipts",
-                  maxResults: 10
-                }
-
-                google.listMessages(options, function(err, data) {
-                  if(!err) {
-                    var mail_array = data;
-
-
-                    for(var i = 0, len = mail_array.length; i < len; i++) {
-                      var extract = {};
-                      if(mail_array[i] != null) {
-                        extract = tokenizer.quickGetDatesAmounts(mail_array[i]['body']);
-                        mail_array[i]['extract'] = extract;
-                      }
-                    }
-
-                    response.send(mail_array);
-                  }
-                  else response.send(err);
-                });
-                */
 
                 // Capturing this mapping to be saved in DB
                 var auth_doc = {
-                    'google_auth': auth,
+                    'google_auth': tokens,
                     'bot_id': state,
                     'id': db.uuid()
                         //'id': state.address.serviceUrl + state.address.channelId + '/' + state.address.user.id

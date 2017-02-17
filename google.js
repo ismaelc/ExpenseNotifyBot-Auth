@@ -1,3 +1,5 @@
+// v2 Added returnAccessTokens that returns tokens only
+
 var google = require('googleapis');
 var OAuth2 = google.auth.OAuth2;
 var async = require('async');
@@ -42,6 +44,15 @@ function retrieveAccessToken(code, callback) {
       oauth2Client.setCredentials(tokens);
       console.log('Tokens: ' + JSON.stringify(tokens));
       callback(null, oauth2Client);
+    } else callback(err, null);
+  });
+}
+
+function returnAccessTokens(code, callback) {
+  oauth2Client.getToken(code, function(err, tokens) {
+    // Now tokens contains an access_token and an optional refresh_token. Save them.
+    if (!err) {
+      callback(null, tokens);
     } else callback(err, null);
   });
 }
