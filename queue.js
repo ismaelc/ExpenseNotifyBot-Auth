@@ -14,7 +14,7 @@ function pushMessageQFunc(queuedMessage, storage_name, queue_name) {
                 queueSvc.createMessage(queue_name, queueMessageBuffer, (err, result, response) => {
                     if (!err) {
                         // Message inserted
-                        console.log('Your message (\'' + queuedMessage.message + '\') has been added to a queue, and it will be sent back to you via a Function');
+                        console.log('Your message (\'' + queuedMessage.payload + '\') has been added to a queue, and it will be sent back to you via a Function');
                         resolve(result);
                         //resolve('Your message (\'' + queuedMessage.text + '\') has been added to a queue, and it will be sent back to you via a Function');
                     } else {

@@ -134,10 +134,11 @@ app.get('/oauth2callback', function(request, response) {
                                 */
                                 console.log('Message pushed to queue');
                                 //context.done(null, 'Http trigger done');
-
+                                /*
                                 response.render('pages/welcome', {
                                     'welcome': 'User01'
                                 });
+                                */
                             })
                             .catch((error) => {
 
@@ -146,9 +147,11 @@ app.get('/oauth2callback', function(request, response) {
 
                                 console.log('Error: ' + error);
                                 //context.done(error, null);
+                                /*
                                 response.render('pages/welcome', {
                                     'welcome': error
                                 });
+                                */
                             })
 
                     })
