@@ -201,3 +201,4 @@ exports.generateAuthURL = generateAuthURL;
 exports.retrieveAccessToken = retrieveAccessToken;
 exports.listMessages = listMessages;
 exports.listLabels = listLabels;
+exports.returnAccessTokens = returnAccessTokens;
