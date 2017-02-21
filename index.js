@@ -69,6 +69,9 @@ app.get('/oauth2callback', function(request, response) {
                         console.log('Returned from queryCollection: ' + JSON.stringify(doc_arr));
                         if (doc_arr.length > 0) {
                             console.log('Doc to be replaced: ' + JSON.stringify(doc_arr[0]));
+
+                            // Preserve refresh token
+                            auth_doc.google_auth.refresh_token = doc_arr[0].google_auth.refresh_token;
                             // Replace doc entry returned by query
                             // New ID is created in replaceAuthDoc
                             db.replaceAuthDocument(doc_arr[0], auth_doc);
