@@ -44,107 +44,134 @@ app.get('/oauth2callback', function(request, response) {
         google.returnAccessTokens(code, function(err, tokens) {
             if (!err) {
 
-                // Capturing this mapping to be saved in DB
-                var auth_doc = {
-                    'google_auth': tokens,
-                    'bot_id': state,
-                    'id': db.uuid()
+                var oauth2client = google.getOauth2Client();
+                oauth2client.setCredentials(tokens);
+
+                var options = {
+                    auth: oauth2client, //auth,
+                    userId: 'me'
                 }
 
-                // Get/create database
-                db.getDatabase()
-                    // Get/create collection
-                    .then(() => db.getCollection())
-                    .then(() => {
-                        // Query db based on passed state - token/channelId/serviceUrl
-                        console.log('Generated auth_doc: ' + JSON.stringify(auth_doc));
-                        return db.queryCollection(
-                            //auth_doc.google_auth.credentials.access_token
-                            auth_doc.bot_id.address.serviceUrl,
-                            auth_doc.bot_id.address.channelId,
-                            auth_doc.bot_id.address.user.id
-                        );
-                    }) // Get matching token/doc
-                    .then((doc_arr) => {
-                        // If doc match, replace it with new one, specifically with new bot_id/state
-                        console.log('Returned from queryCollection: ' + JSON.stringify(doc_arr));
-                        if (doc_arr.length > 0) {
-                            console.log('Doc to be replaced: ' + JSON.stringify(doc_arr[0]));
+                google.getUser(options, function(err, data) {
+                    if (err) {
+                        console.log('Err: ' + JSON.stringify(err));
+                        //response.send('Err: ' + JSON.stringify(err));
 
-                            // Preserve refresh token
-                            if (!auth_doc.google_auth.hashOwnProperty('refresh_token')) {
-                                auth_doc.google_auth.refresh_token = doc_arr[0].google_auth.refresh_token;
-                            }
-                            // Replace doc entry returned by query
-                            // New ID is created in replaceAuthDoc
-                            db.replaceAuthDocument(doc_arr[0], auth_doc);
-                        }
-                        // If no match of token/channel, create new doc
-                        else {
-                            // This looks for documentUrl based on document.id
-                            // Since auth_doc is new, no id is passed
-                            db.getAuthDocument(auth_doc)
-                                .then(() => console.log('Created doc'))
-                                .catch((error) => console.log('Error: ' + JSON.stringify(error)));
-                        }
-                    })
-                    .then(() => {
+                        response.render('pages/welcome', {
+                            'welcome': err
+                        });
+                    } else {
 
-                        var payload = {
-                            'origin': 'bot',
-                            'intent': 'login'
-                        };
+                        var email_address = data.emailAddress;
+                        //console.log(JSON.stringify(data));
+                        //response.send(JSON.stringify(data));
 
-                        var message = {
-                            'address': state.address,
-                            'payload': payload
+                        // Capturing this mapping to be saved in DB
+                        var auth_doc = {
+                            'email_address': email_address,
+                            'google_auth': tokens,
+                            'bot_id': state,
+                            'id': db.uuid()
                         }
 
-                        queue.pushMessageQFunc(message, 'expensenotifybotd3giz3_STORAGE', 'js-queue-items-for-bot')
+                        // Get/create database
+                        db.getDatabase()
+                            // Get/create collection
+                            .then(() => db.getCollection())
                             .then(() => {
-                                /*
-                                session.send('Pushed: ' + JSON.stringify(message));
-                                session.endDialog();
-                                */
-                                console.log('Message pushed to queue');
-                                //context.done(null, 'Http trigger done');
-                                /*
+                                // Query db based on passed state - token/channelId/serviceUrl
+                                console.log('Generated auth_doc: ' + JSON.stringify(auth_doc));
+                                return db.queryCollection(
+                                    //auth_doc.google_auth.credentials.access_token
+                                    auth_doc.bot_id.address.serviceUrl,
+                                    auth_doc.bot_id.address.channelId,
+                                    auth_doc.bot_id.address.user.id
+                                );
+                            }) // Get matching token/doc
+                            .then((doc_arr) => {
+                                // If doc match, replace it with new one, specifically with new bot_id/state
+                                console.log('Returned from queryCollection: ' + JSON.stringify(doc_arr));
+                                if (doc_arr.length > 0) {
+                                    console.log('Doc to be replaced: ' + JSON.stringify(doc_arr[0]));
+
+                                    // Preserve refresh token
+                                    if (!auth_doc.google_auth.hashOwnProperty('refresh_token')) {
+                                        auth_doc.google_auth.refresh_token = doc_arr[0].google_auth.refresh_token;
+                                    }
+                                    // Replace doc entry returned by query
+                                    // New ID is created in replaceAuthDoc
+                                    db.replaceAuthDocument(doc_arr[0], auth_doc);
+                                }
+                                // If no match of token/channel, create new doc
+                                else {
+                                    // This looks for documentUrl based on document.id
+                                    // Since auth_doc is new, no id is passed
+                                    db.getAuthDocument(auth_doc)
+                                        .then(() => console.log('Created doc'))
+                                        .catch((error) => console.log('Error: ' + JSON.stringify(error)));
+                                }
+                            })
+                            .then(() => {
+
+                                var payload = {
+                                    'origin': 'bot',
+                                    'intent': 'login'
+                                };
+
+                                var message = {
+                                    'address': state.address,
+                                    'payload': payload
+                                }
+
+                                queue.pushMessageQFunc(message, 'expensenotifybotd3giz3_STORAGE', 'js-queue-items-for-bot')
+                                    .then(() => {
+                                        /*
+                                        session.send('Pushed: ' + JSON.stringify(message));
+                                        session.endDialog();
+                                        */
+                                        console.log('Message pushed to queue');
+                                        //context.done(null, 'Http trigger done');
+                                        /*
+                                        response.render('pages/welcome', {
+                                            'welcome': 'User01'
+                                        });
+                                        */
+                                    })
+                                    .catch((error) => {
+
+                                        //session.send('Error: ' + error);
+                                        //session.endDialog();
+
+                                        console.log('Error: ' + error);
+                                        //context.done(error, null);
+                                        /*
+                                        response.render('pages/welcome', {
+                                            'welcome': error
+                                        });
+                                        */
+                                    })
+
+                            })
+                            //.then(() => db.getAuthDocument(auth_doc)) // get/create doc
+                            .then(() => {
+                                // send message to bot through queue
                                 response.render('pages/welcome', {
                                     'welcome': 'User01'
                                 });
-                                */
                             })
                             .catch((error) => {
-
-                                //session.send('Error: ' + error);
-                                //session.endDialog();
-
-                                console.log('Error: ' + error);
-                                //context.done(error, null);
-                                /*
+                                //exit(`Completed with error ${JSON.stringify(error)}`)
+                                //session.send('Completed with error ' + JSON.stringify(error));
+                                console.log('Completed with error: ' + JSON.stringify(error));
+                                //res.redirect('/');
                                 response.render('pages/welcome', {
                                     'welcome': error
                                 });
-                                */
-                            })
+                            });
 
-                    })
-                    //.then(() => db.getAuthDocument(auth_doc)) // get/create doc
-                    .then(() => {
-                        // send message to bot through queue
-                        response.render('pages/welcome', {
-                            'welcome': 'User01'
-                        });
-                    })
-                    .catch((error) => {
-                        //exit(`Completed with error ${JSON.stringify(error)}`)
-                        //session.send('Completed with error ' + JSON.stringify(error));
-                        console.log('Completed with error: ' + JSON.stringify(error));
-                        //res.redirect('/');
-                        response.render('pages/welcome', {
-                            'welcome': error
-                        });
-                    });
+
+                    }
+                });
 
             } else response.send("Error: " + err);
         });
