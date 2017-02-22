@@ -1,4 +1,5 @@
-// v2 Added returnAccessTokens that returns tokens only
+// v3 Added getOauth2Client
+// v2 Added returnAccessTokens that returns tokens only, not oauthclient
 
 var google = require('googleapis');
 var OAuth2 = google.auth.OAuth2;
@@ -16,6 +17,20 @@ var oauth2Client = new OAuth2(
 );
 
 //console.log(generateAuthURL());
+
+function getOauth2Client() {
+  var client_id = process.env['GOOGLE_CLIENT_ID'];
+  var client_secret = process.env['GOOGLE_CLIENT_SECRET'];
+  var redirect_url = process.env['AUTH_REDIRECT_URL']; //'http://localhost:5000/oauth2callback';
+
+  var oauth2Client = new OAuth2(
+    client_id,
+    client_secret,
+    redirect_url
+  );
+
+  return oauth2Client;
+}
 
 function generateAuthURL() {
 
@@ -38,7 +53,7 @@ function generateAuthURL() {
 }
 
 function retrieveAccessToken(code, callback) {
-  oauth2Client.getToken(code, function(err, tokens) {
+  oauth2Client.getToken(code, function (err, tokens) {
     // Now tokens contains an access_token and an optional refresh_token. Save them.
     if (!err) {
       oauth2Client.setCredentials(tokens);
@@ -49,17 +64,32 @@ function retrieveAccessToken(code, callback) {
 }
 
 function returnAccessTokens(code, callback) {
-  oauth2Client.getToken(code, function(err, tokens) {
+  oauth2Client.getToken(code, function (err, tokens) {
     // Now tokens contains an access_token and an optional refresh_token. Save them.
     if (!err) {
+      /*
+      oauth2Client.setCredentials(tokens);
+      console.log('Tokens: ' + JSON.stringify(tokens));
+      callback(null, oauth2Client);
+      */
       callback(null, tokens);
     } else callback(err, null);
   });
 }
 
+function getUser(options, callback) {
+    var gmail = google.gmail('v1');
+    gmail.users.getProfile(options, function(err, response) {
+        if(err) callback(err, 'Error: ' + response);
+        else {
+            callback(null, response);
+        }
+    });
+}
+
 function listMessages(options, callback) {
   var gmail = google.gmail('v1');
-  gmail.users.messages.list(options, function(err, response) {
+  gmail.users.messages.list(options, function (err, response) {
     if (err) {
       console.log('The API returned an error: ' + err);
       callback(err, 'The API returned an error: ' + response);
@@ -80,9 +110,9 @@ function listMessages(options, callback) {
         }
         */
 
-        async.mapLimit(messages, 10, function(message, _callback) {
+        async.mapLimit(messages, 10, function (message, _callback) {
           //_callback(null, message['id']);
-          getMessage(options['auth'], 'me', message['id'], function(err, data) {
+          getMessage(options['auth'], 'me', message['id'], function (err, data) {
 
             if (err) _callback(err, data);
             else {
@@ -91,12 +121,12 @@ function listMessages(options, callback) {
 
               var type = data.payload.mimeType.split('/');
               var parts = data.payload.parts;
-              if(type[0] == "multipart" && type[1] == "related") parts = data.payload.parts[0].parts;
+              if (type[0] == "multipart" && type[1] == "related") parts = data.payload.parts[0].parts;
 
 
               //console.log('Payload: ' + JSON.stringify(parts));
 
-              var html_parts = parts.filter(function(part) {
+              var html_parts = parts.filter(function (part) {
                 return part.mimeType == 'text/html';
               });
 
@@ -109,13 +139,13 @@ function listMessages(options, callback) {
 
                 var b64string = html_parts[0].body.data.replace(/-/g, '+').replace(/_/g, '/');
                 var htmlfromText = htmlToText.fromString(
-                    new Buffer(b64string, 'base64')
+                  new Buffer(b64string, 'base64')
                     .toString('ascii')
                     .replace(/(\r\n|\n|\r)/gm, " "), {
-                      ignoreHref: true,
-                      ignoreImage: true
-                    }
-                  )
+                    ignoreHref: true,
+                    ignoreImage: true
+                  }
+                )
                   .replace(/(\r\n|\n|\r)/gm, " "); //.replace(/\r?\n|\r/g, " "))
 
                 var mail = {
@@ -136,7 +166,7 @@ function listMessages(options, callback) {
               //_callback(null, data.payload);
             }
           })
-        }, function(err, results) {
+        }, function (err, results) {
           if (err) callback(err, results);
           else callback(null, results);
         });
@@ -156,14 +186,14 @@ function getMessage(auth, userId, messageId, callback) {
   }
 
   var gmail = google.gmail('v1');
-  gmail.users.messages.get(options, function(err, response) {
+  gmail.users.messages.get(options, function (err, response) {
     if (err) callback(err, response);
     else callback(null, response);
   });
 }
 
-var extractField = function(json, fieldName) {
-  return json.payload.headers.filter(function(header) {
+var extractField = function (json, fieldName) {
+  return json.payload.headers.filter(function (header) {
     return header.name === fieldName;
   })[0].value;
 };
@@ -173,7 +203,7 @@ function listLabels(auth, callback) {
   gmail.users.labels.list({
     auth: auth,
     userId: 'me',
-  }, function(err, response) {
+  }, function (err, response) {
     if (err) {
       console.log('The API returned an error: ' + err);
       callback(err, 'The API returned an error: ' + response);
@@ -202,3 +232,5 @@ exports.retrieveAccessToken = retrieveAccessToken;
 exports.listMessages = listMessages;
 exports.listLabels = listLabels;
 exports.returnAccessTokens = returnAccessTokens;
+exports.getOauth2Client = getOauth2Client;
+exports.getUser = getUser;
