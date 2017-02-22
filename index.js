@@ -21,7 +21,9 @@ app.get('/login', function(request, response) {
     response.send("<a href='" + google.generateAuthURL() + "'>Login</a>");
 });
 
-//TODO: Bring documentdb.js to save tokens to DocumentDB
+//TODO: User's are unable to login to multiple channels using same Gmail account
+// because previous connection's tokens are invalidated (grant) when logged in
+// to new channel
 app.get('/oauth2callback', function(request, response) {
     var code = request.query['code'];
     //console.log('Code: ' + code);
@@ -47,7 +49,6 @@ app.get('/oauth2callback', function(request, response) {
                     'google_auth': tokens,
                     'bot_id': state,
                     'id': db.uuid()
-                        //'id': state.address.serviceUrl + state.address.channelId + '/' + state.address.user.id
                 }
 
                 // Get/create database
@@ -71,7 +72,9 @@ app.get('/oauth2callback', function(request, response) {
                             console.log('Doc to be replaced: ' + JSON.stringify(doc_arr[0]));
 
                             // Preserve refresh token
-                            auth_doc.google_auth.refresh_token = doc_arr[0].google_auth.refresh_token;
+                            if (!auth_doc.google_auth.hashOwnProperty('refresh_token')) {
+                                auth_doc.google_auth.refresh_token = doc_arr[0].google_auth.refresh_token;
+                            }
                             // Replace doc entry returned by query
                             // New ID is created in replaceAuthDoc
                             db.replaceAuthDocument(doc_arr[0], auth_doc);
