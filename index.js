@@ -68,7 +68,7 @@ app.get('/oauth2callback', function(request, response) {
 
                         // Capturing this mapping to be saved in DB
                         var auth_doc = {
-                            'email_address': email_address,
+                            'google_id': email_address,
                             'google_auth': tokens,
                             'bot_id': state,
                             'id': db.uuid()
