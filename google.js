@@ -44,6 +44,7 @@ function generateAuthURL() {
   var url = oauth2Client.generateAuthUrl({
     // 'online' (default) or 'offline' (gets refresh_token)
     access_type: 'offline',
+    prompt: 'consent',
     // If you only need one scope you can pass it as string
     scope: scopes
   });

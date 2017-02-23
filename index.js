@@ -37,7 +37,6 @@ app.get('/oauth2callback', function(request, response) {
     } else {
 
         state = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
-        //console.log('Retrieved state: ' + JSON.stringify(state));
         //request.session.state = null; // remove state?
 
         //google.retrieveAccessToken(code, function(err, auth) {
@@ -55,16 +54,17 @@ app.get('/oauth2callback', function(request, response) {
                 google.getUser(options, function(err, data) {
                     if (err) {
                         console.log('Err: ' + JSON.stringify(err));
-                        //response.send('Err: ' + JSON.stringify(err));
-
                         response.render('pages/welcome', {
                             'welcome': err
                         });
                     } else {
 
                         var email_address = data.emailAddress;
-                        //console.log(JSON.stringify(data));
-                        //response.send(JSON.stringify(data));
+
+                        // TODO:
+                        // Check DB if this email already exists in DB (regardless of channel)
+                        // PROBLEM: If new login, old refresh token becomes invalid, and no new refresh tokens are created
+                        // If yes, copy new tokens over to these existing entries
 
                         // Capturing this mapping to be saved in DB
                         var auth_doc = {
