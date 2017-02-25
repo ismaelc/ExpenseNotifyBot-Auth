@@ -128,7 +128,7 @@ app.get('/oauth2callback', function(request, response) {
 
                                 var queue = new azure.Queue({
                                      accountId: process.env['STORAGE_ACCOUNTID'],
-                                     accessKey: process.env['STORAGE_ACCOUNTKEY']
+                                     accessKey: process.env['STORAGE_ACCESSKEY']
                                  });
 
                                  // Create queue and insert message
