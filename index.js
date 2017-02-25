@@ -135,7 +135,7 @@ app.get('/oauth2callback', function(request, response) {
                                  queue.createQueue('js-queue-items-for-bot')
                                      .then(function () {
                                          return queue.putMessage('js-queue-items-for-bot',
-                                             new Buffer(JSON.stringify(queuedMessage)).toString('base64'),
+                                             new Buffer(JSON.stringify(message)).toString('base64'),
                                              {
                                                  visibilityTimeout: 1,     // Visible after 1 seconds
                                                  messageTTL: 60  // Expires after 1 hour
