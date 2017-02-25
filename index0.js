@@ -3,8 +3,7 @@ var app = express();
 var google = require('./google.js');
 var tokenizer = require('./expense_tokenizer.js');
 var db = require('./documentdb.js');
-//var queue = require('./queue.js');
-var azure = require('fast-azure-storage');
+var queue = require('./queue.js');
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -126,31 +125,19 @@ app.get('/oauth2callback', function(request, response) {
                                     'payload': payload
                                 }
 
-                                var queue = new azure.Queue({
-                                     accountId: process.env['STORAGE_ACCOUNTID'],
-                                     accessKey: process.env['STORAGE_ACCOUNTKEY']
-                                 });
-
-                                 // Create queue and insert message
-                                 queue.createQueue('js-queue-items-for-bot')
-                                     .then(function () {
-                                         return queue.putMessage('js-queue-items-for-bot',
-                                             new Buffer(JSON.stringify(queuedMessage)).toString('base64'),
-                                             {
-                                                 visibilityTimeout: 1,     // Visible after 1 seconds
-                                                 messageTTL: 60  // Expires after 1 hour
-                                             })
-                                     })
-                                     .then((msg) => {
-                                         console.log('Message queued for bot. Response: ' + msg);
-                                     })
-                                /*
                                 queue.pushMessageQFunc(message, 'expensenotifybotd3giz3_STORAGE', 'js-queue-items-for-bot')
                                     .then(() => {
-
+                                        /*
+                                        session.send('Pushed: ' + JSON.stringify(message));
+                                        session.endDialog();
+                                        */
                                         console.log('Message pushed to queue');
                                         //context.done(null, 'Http trigger done');
-
+                                        /*
+                                        response.render('pages/welcome', {
+                                            'welcome': 'User01'
+                                        });
+                                        */
                                     })
                                     .catch((error) => {
 
@@ -159,16 +146,19 @@ app.get('/oauth2callback', function(request, response) {
 
                                         console.log('Error: ' + error);
                                         //context.done(error, null);
-
+                                        /*
+                                        response.render('pages/welcome', {
+                                            'welcome': error
+                                        });
+                                        */
                                     })
-                                */
 
                             })
                             //.then(() => db.getAuthDocument(auth_doc)) // get/create doc
                             .then(() => {
                                 // send message to bot through queue
                                 response.render('pages/welcome', {
-                                    'welcome': email_address
+                                    'welcome': 'User01'
                                 });
                             })
                             .catch((error) => {
