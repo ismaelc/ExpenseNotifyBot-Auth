@@ -136,10 +136,14 @@ app.get('/oauth2callback', function(request, response) {
                                      .then(function () {
                                          return queue.putMessage('js-queue-items-for-bot',
                                              new Buffer(JSON.stringify(message)).toString('base64'),
+                                             /*
                                              {
-                                                 visibilityTimeout: 10,     // Visible after 1 seconds
-                                                 messageTTL: 60  // Expires after 1 hour
-                                             })
+                                                 visibilityTimeout: 10,     // Visible after 10 seconds
+                                                 messageTTL: 60 * 60 // Expires after 60 secs
+                                             }
+                                             */
+                                             {}
+                                             )
                                      })
                                      .then((msg) => {
                                          console.log('Message queued for bot. Response: ' + msg);
