@@ -150,7 +150,7 @@ app.get('/oauth2callback', function(request, response) {
                                      })
                                 */
 
-                                queue.pushMessageQFunc(message, 'expensenotifybotd3giz3_STORAGE', 'js-queue-items-for-bot')
+                                queue.pushMessageQFunc(message, 'expensenotifybotd3giz3_STORAGE', 'js-queue-items-for-bot2')
                                     .then(() => {
 
                                         console.log('Message pushed to queue');
