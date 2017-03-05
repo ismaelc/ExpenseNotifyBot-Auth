@@ -3,8 +3,8 @@ var app = express();
 var google = require('./google.js');
 var tokenizer = require('./expense_tokenizer.js');
 var db = require('./documentdb.js');
-//var queue = require('./queue.js');
-var azure = require('fast-azure-storage');
+var queue = require('./queue.js');
+//var azure = require('fast-azure-storage');
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -126,6 +126,7 @@ app.get('/oauth2callback', function(request, response) {
                                     'payload': payload
                                 }
 
+                                /*
                                 var queue = new azure.Queue({
                                      accountId: process.env['STORAGE_ACCOUNTID'],
                                      accessKey: process.env['STORAGE_ACCESSKEY']
@@ -147,7 +148,8 @@ app.get('/oauth2callback', function(request, response) {
                                      .then((msg) => {
                                          console.log('Message queued for bot. Response: ' + msg);
                                      })
-                                /*
+                                */
+
                                 queue.pushMessageQFunc(message, 'expensenotifybotd3giz3_STORAGE', 'js-queue-items-for-bot')
                                     .then(() => {
 
@@ -164,8 +166,6 @@ app.get('/oauth2callback', function(request, response) {
                                         //context.done(error, null);
 
                                     })
-                                */
-
                             })
                             //.then(() => db.getAuthDocument(auth_doc)) // get/create doc
                             .then(() => {
