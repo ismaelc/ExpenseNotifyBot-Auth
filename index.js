@@ -22,6 +22,58 @@ app.get('/login', function(request, response) {
     response.send("<a href='" + google.generateAuthURL() + "'>Login</a>");
 });
 
+app.get('/oauth2callback_concur', function(request, response) {
+    var code = request.query.code;
+
+    var state = request.query.state;
+    if(!state) {
+        //TODO: Fix these passed render data (instead of 'welcome')
+        response.render('pages/welcome', {
+            'welcome': 'No state passed'
+        });
+    }
+    else {
+        // check DB w similar address from state
+        // check if concur token exists
+        // if token missing, add it to DB
+
+        state = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
+
+        var payload = {
+            'origin': 'bot',
+            'intent': 'login'
+        };
+
+        var message = {
+            'address': state.address,
+            'payload': payload
+        }
+
+
+        var queue = new azure.Queue({
+             accountId: process.env['STORAGE_ACCOUNTID'],
+             accessKey: process.env['STORAGE_ACCESSKEY']
+         });
+
+         // Create queue and insert message
+         queue.createQueue('js-queue-items-for-bot')
+             .then(function () {
+                 return queue.putMessage('js-queue-items-for-bot',
+                     new Buffer(JSON.stringify(message)).toString('base64'),
+                     {
+                         //visibilityTimeout: 10     // Visible after 10 seconds
+                         //messageTTL: 60 * 60 // Expires after 60 secs
+                     }
+                     //{}
+                     )
+             })
+             .then((msg) => {
+                 console.log('Message queued for bot. Response: ' + msg);
+             })
+        
+    }
+})
+
 //TODO: User's are unable to login to multiple channels using same Gmail account
 // because previous connection's tokens are invalidated (grant) when logged in
 // to new channel
