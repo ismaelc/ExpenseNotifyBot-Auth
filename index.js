@@ -39,6 +39,8 @@ app.get('/oauth2callback_concur', function(request, response) {
 
         state = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
 
+        console.log('State: ' + JSON.stringify(state));
+
         var payload = {
             'origin': 'bot',
             'intent': 'login'
@@ -73,7 +75,7 @@ app.get('/oauth2callback_concur', function(request, response) {
              .then(() => {
                  // send message to bot through queue
                  response.render('pages/welcome', {
-                     'welcome': 'Signed in!'
+                     'welcome': 'Concur user, you are signed in!'
                  });
              })
              .catch((error) => {
@@ -192,7 +194,6 @@ app.get('/oauth2callback', function(request, response) {
                                     'address': state.address,
                                     'payload': payload
                                 }
-
 
                                 var queue = new azure.Queue({
                                      accountId: process.env['STORAGE_ACCOUNTID'],
