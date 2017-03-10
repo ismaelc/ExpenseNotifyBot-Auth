@@ -70,7 +70,22 @@ app.get('/oauth2callback_concur', function(request, response) {
              .then((msg) => {
                  console.log('Message queued for bot. Response: ' + msg);
              })
-        
+             .then(() => {
+                 // send message to bot through queue
+                 response.render('pages/welcome', {
+                     'welcome': 'Signed in!'
+                 });
+             })
+             .catch((error) => {
+                 //exit(`Completed with error ${JSON.stringify(error)}`)
+                 //session.send('Completed with error ' + JSON.stringify(error));
+                 console.log('Completed with error: ' + JSON.stringify(error));
+                 //res.redirect('/');
+                 response.render('pages/welcome', {
+                     'welcome': error
+                 });
+             });
+
     }
 })
 
