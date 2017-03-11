@@ -118,7 +118,7 @@ app.get('/oauth2callback_concur', function(request, response) {
                     };
 
                     var message = {
-                        'address': state,
+                        'address': address,
                         'payload': payload
                     }
 
