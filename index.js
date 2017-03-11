@@ -5,6 +5,7 @@ var tokenizer = require('./expense_tokenizer.js');
 var db = require('./documentdb.js');
 //var queue = require('./queue.js');
 var azure = require('fast-azure-storage');
+var concur = require('./concur.js');
 
 app.set('port', (process.env.PORT || 5000));
 
@@ -26,6 +27,7 @@ app.get('/oauth2callback_concur', function(request, response) {
     var code = request.query.code;
 
     var state = request.query.state;
+
     if(!state) {
         //TODO: Fix these passed render data (instead of 'welcome')
         response.render('pages/welcome', {
@@ -33,14 +35,135 @@ app.get('/oauth2callback_concur', function(request, response) {
         });
     }
     else {
+
+        console.log('State: ' + JSON.stringify(state));
+
         // check DB w similar address from state
         // check if concur token exists
         // if token missing, add it to DB
 
-        state = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
+        // At this point, state = address
+        var address = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
 
-        console.log('State: ' + JSON.stringify(state));
+        // Get/create database
+        db.getDatabase()
+            // Get/create collection
+            .then(() => db.getCollection())
+            .then(() => {
+                // Query db based on passed state - token/channelId/serviceUrl
+                return db.queryCollection(
+                    //auth_doc.google_auth.credentials.access_token
+                    address.serviceUrl,
+                    address.channelId,
+                    address.user.id
+                );
+            }) // Get matching token/doc
+            .then((doc_arr) => {
+                if(doc_arr.length == 0) {
+                    // No entry means need to login to Gmail first
+                    var payload = {
+                        'origin': 'auth_page',
+                        'intent': 'login_request_google'
+                    };
 
+                    var message = {
+                        'address': address,
+                        'payload': payload
+                    }
+
+                    var queue = new azure.Queue({
+                         accountId: process.env['STORAGE_ACCOUNTID'],
+                         accessKey: process.env['STORAGE_ACCESSKEY']
+                     });
+
+                     // Create queue and insert message
+                     queue.createQueue('js-queue-items-for-bot')
+                         .then(function () {
+                             return queue.putMessage('js-queue-items-for-bot',
+                                 new Buffer(JSON.stringify(message)).toString('base64'),
+                                 {
+                                     //visibilityTimeout: 10     // Visible after 10 seconds
+                                     //messageTTL: 60 * 60 // Expires after 60 secs
+                                 }
+                                 //{}
+                                 )
+                         })
+                         .then((msg) => {
+                             console.log('Message queued for bot. Response: ' + msg);
+                         })
+                         .then(() => {
+                             // send message to bot through queue
+                             response.render('pages/welcome', {
+                                 'welcome': 'You need to login to Google first'
+                             });
+                         })
+                         .catch((error) => {
+                             //exit(`Completed with error ${JSON.stringify(error)}`)
+                             //session.send('Completed with error ' + JSON.stringify(error));
+                             console.log('Completed with error: ' + JSON.stringify(error));
+                             //res.redirect('/');
+                             response.render('pages/welcome', {
+                                 'welcome': error
+                             });
+                         });
+                }
+                else {
+                    // There's DB, but is there a Concur token?
+                    // If no, add it
+                    // If yes, replace it
+
+                    var payload = {
+                        'origin': 'bot',
+                        'intent': 'login'
+                    };
+
+                    var message = {
+                        'address': state,
+                        'payload': payload
+                    }
+
+                    var queue = new azure.Queue({
+                         accountId: process.env['STORAGE_ACCOUNTID'],
+                         accessKey: process.env['STORAGE_ACCESSKEY']
+                     });
+
+                     // Create queue and insert message
+                     queue.createQueue('js-queue-items-for-bot')
+                         .then(function () {
+                             return queue.putMessage('js-queue-items-for-bot',
+                                 new Buffer(JSON.stringify(message)).toString('base64'),
+                                 {
+                                     //visibilityTimeout: 10     // Visible after 10 seconds
+                                     //messageTTL: 60 * 60 // Expires after 60 secs
+                                 }
+                                 //{}
+                                 )
+                         })
+                         .then((msg) => {
+                             console.log('Message queued for bot. Response: ' + msg);
+                         })
+                         .then(() => {
+                             // send message to bot through queue
+                             response.render('pages/welcome', {
+                                 'welcome': 'Concur user, you are signed in!'
+                             });
+                         })
+                         .catch((error) => {
+                             //exit(`Completed with error ${JSON.stringify(error)}`)
+                             //session.send('Completed with error ' + JSON.stringify(error));
+                             console.log('Completed with error: ' + JSON.stringify(error));
+                             //res.redirect('/');
+                             response.render('pages/welcome', {
+                                 'welcome': error
+                             });
+                         });
+
+                }
+
+            })
+
+
+        /*
         var payload = {
             'origin': 'bot',
             'intent': 'login'
@@ -50,7 +173,6 @@ app.get('/oauth2callback_concur', function(request, response) {
             'address': state,
             'payload': payload
         }
-
 
         var queue = new azure.Queue({
              accountId: process.env['STORAGE_ACCOUNTID'],
@@ -87,6 +209,7 @@ app.get('/oauth2callback_concur', function(request, response) {
                      'welcome': error
                  });
              });
+        */
 
     }
 })
