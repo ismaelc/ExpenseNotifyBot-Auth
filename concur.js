@@ -38,12 +38,12 @@ function getToken(code, callback) {
     };
     oauth2.authorizationCode.getToken(options, (error, result) => {
         if (error) {
-            debug('Access Token Error', error.message);
+//            debug('Access Token Error', error.message);
             callback('Authentication failed, please try again.', null);
         }
         //console.log('The resulting token: ', result);
         const token = oauth2.accessToken.create(result);
-        debug('Received token ' + JSON.stringify(token));
+//        debug('Received token ' + JSON.stringify(token));
         callback(null, token);
     });
 }
