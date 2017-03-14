@@ -24,27 +24,40 @@ app.get('/login', function(request, response) {
 });
 
 app.get('/oauth2callback_concur', function(request, response) {
+
     var code = request.query.code;
-
     var state = request.query.state;
-
-    if(!state) {
+    if (!state || !code) {
         //TODO: Fix these passed render data (instead of 'welcome')
         response.render('pages/welcome', {
-            'welcome': 'No state passed'
+            'welcome': 'No state or code passed'
         });
-    }
-    else {
+    } else {
 
         console.log('State: ' + JSON.stringify(state));
+
+        concur.getToken(code, function(err, token) {
+            if(err) {
+                response.render('pages/welcome', {
+                    'welcome': 'No welcome! Error!: ' + err
+                });
+            }
+            else {
+                console.log('Concur token: ' + JSON.stringify(token));
+                response.render('pages/welcome', {
+                    'welcome': 'Concur token: ' + token
+                })
+            }
+        })
 
         // check DB w similar address from state
         // check if concur token exists
         // if token missing, add it to DB
 
-        // At this point, state = address
+        // At this point, state = address. To be used to send msg to bot
         var address = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
 
+        /*
         // Get/create database
         db.getDatabase()
             // Get/create collection
@@ -59,8 +72,9 @@ app.get('/oauth2callback_concur', function(request, response) {
                 );
             }) // Get matching token/doc
             .then((doc_arr) => {
-                if(doc_arr.length == 0) {
-                    // No entry means need to login to Gmail first
+
+                // No entry means need to login to Gmail first
+                if (doc_arr.length == 0) {
                     var payload = {
                         'origin': 'auth_page',
                         'intent': 'login_request_google'
@@ -72,42 +86,40 @@ app.get('/oauth2callback_concur', function(request, response) {
                     }
 
                     var queue = new azure.Queue({
-                         accountId: process.env['STORAGE_ACCOUNTID'],
-                         accessKey: process.env['STORAGE_ACCESSKEY']
-                     });
+                        accountId: process.env['STORAGE_ACCOUNTID'],
+                        accessKey: process.env['STORAGE_ACCESSKEY']
+                    });
 
-                     // Create queue and insert message
-                     queue.createQueue('js-queue-items-for-bot')
-                         .then(function () {
-                             return queue.putMessage('js-queue-items-for-bot',
-                                 new Buffer(JSON.stringify(message)).toString('base64'),
-                                 {
-                                     //visibilityTimeout: 10     // Visible after 10 seconds
-                                     //messageTTL: 60 * 60 // Expires after 60 secs
-                                 }
-                                 //{}
-                                 )
-                         })
-                         .then((msg) => {
-                             console.log('Message queued for bot. Response: ' + msg);
-                         })
-                         .then(() => {
-                             // send message to bot through queue
-                             response.render('pages/welcome', {
-                                 'welcome': 'You need to login to Google first'
-                             });
-                         })
-                         .catch((error) => {
-                             //exit(`Completed with error ${JSON.stringify(error)}`)
-                             //session.send('Completed with error ' + JSON.stringify(error));
-                             console.log('Completed with error: ' + JSON.stringify(error));
-                             //res.redirect('/');
-                             response.render('pages/welcome', {
-                                 'welcome': error
-                             });
-                         });
-                }
-                else {
+                    // Create queue and insert message
+                    queue.createQueue('js-queue-items-for-bot')
+                        .then(function() {
+                            return queue.putMessage('js-queue-items-for-bot',
+                                new Buffer(JSON.stringify(message)).toString('base64'), {
+                                    //visibilityTimeout: 10     // Visible after 10 seconds
+                                    //messageTTL: 60 * 60 // Expires after 60 secs
+                                }
+                                //{}
+                            )
+                        })
+                        .then((msg) => {
+                            console.log('Message queued for bot. Response: ' + msg);
+                        })
+                        .then(() => {
+                            // send message to bot through queue
+                            response.render('pages/welcome', {
+                                'welcome': 'You need to login to Google first'
+                            });
+                        })
+                        .catch((error) => {
+                            //exit(`Completed with error ${JSON.stringify(error)}`)
+                            //session.send('Completed with error ' + JSON.stringify(error));
+                            console.log('Completed with error: ' + JSON.stringify(error));
+                            //res.redirect('/');
+                            response.render('pages/welcome', {
+                                'welcome': error
+                            });
+                        });
+                } else {
                     // There's DB, but is there a Concur token?
                     // If no, add it
                     // If yes, replace it
@@ -123,44 +135,44 @@ app.get('/oauth2callback_concur', function(request, response) {
                     }
 
                     var queue = new azure.Queue({
-                         accountId: process.env['STORAGE_ACCOUNTID'],
-                         accessKey: process.env['STORAGE_ACCESSKEY']
-                     });
+                        accountId: process.env['STORAGE_ACCOUNTID'],
+                        accessKey: process.env['STORAGE_ACCESSKEY']
+                    });
 
-                     // Create queue and insert message
-                     queue.createQueue('js-queue-items-for-bot')
-                         .then(function () {
-                             return queue.putMessage('js-queue-items-for-bot',
-                                 new Buffer(JSON.stringify(message)).toString('base64'),
-                                 {
-                                     //visibilityTimeout: 10     // Visible after 10 seconds
-                                     //messageTTL: 60 * 60 // Expires after 60 secs
-                                 }
-                                 //{}
-                                 )
-                         })
-                         .then((msg) => {
-                             console.log('Message queued for bot. Response: ' + msg);
-                         })
-                         .then(() => {
-                             // send message to bot through queue
-                             response.render('pages/welcome', {
-                                 'welcome': 'Concur user, you are signed in!'
-                             });
-                         })
-                         .catch((error) => {
-                             //exit(`Completed with error ${JSON.stringify(error)}`)
-                             //session.send('Completed with error ' + JSON.stringify(error));
-                             console.log('Completed with error: ' + JSON.stringify(error));
-                             //res.redirect('/');
-                             response.render('pages/welcome', {
-                                 'welcome': error
-                             });
-                         });
+                    // Create queue and insert message
+                    queue.createQueue('js-queue-items-for-bot')
+                        .then(function() {
+                            return queue.putMessage('js-queue-items-for-bot',
+                                new Buffer(JSON.stringify(message)).toString('base64'), {
+                                    //visibilityTimeout: 10     // Visible after 10 seconds
+                                    //messageTTL: 60 * 60 // Expires after 60 secs
+                                }
+                                //{}
+                            )
+                        })
+                        .then((msg) => {
+                            console.log('Message queued for bot. Response: ' + msg);
+                        })
+                        .then(() => {
+                            // send message to bot through queue
+                            response.render('pages/welcome', {
+                                'welcome': 'Concur user, you are signed in!'
+                            });
+                        })
+                        .catch((error) => {
+                            //exit(`Completed with error ${JSON.stringify(error)}`)
+                            //session.send('Completed with error ' + JSON.stringify(error));
+                            console.log('Completed with error: ' + JSON.stringify(error));
+                            //res.redirect('/');
+                            response.render('pages/welcome', {
+                                'welcome': error
+                            });
+                        });
 
                 }
 
             })
+        */
 
 
         /*
@@ -319,25 +331,24 @@ app.get('/oauth2callback', function(request, response) {
                                 }
 
                                 var queue = new azure.Queue({
-                                     accountId: process.env['STORAGE_ACCOUNTID'],
-                                     accessKey: process.env['STORAGE_ACCESSKEY']
-                                 });
+                                    accountId: process.env['STORAGE_ACCOUNTID'],
+                                    accessKey: process.env['STORAGE_ACCESSKEY']
+                                });
 
-                                 // Create queue and insert message
-                                 queue.createQueue('js-queue-items-for-bot')
-                                     .then(function () {
-                                         return queue.putMessage('js-queue-items-for-bot',
-                                             new Buffer(JSON.stringify(message)).toString('base64'),
-                                             {
-                                                 //visibilityTimeout: 10     // Visible after 10 seconds
-                                                 //messageTTL: 60 * 60 // Expires after 60 secs
-                                             }
-                                             //{}
-                                             )
-                                     })
-                                     .then((msg) => {
-                                         console.log('Message queued for bot. Response: ' + msg);
-                                     })
+                                // Create queue and insert message
+                                queue.createQueue('js-queue-items-for-bot')
+                                    .then(function() {
+                                        return queue.putMessage('js-queue-items-for-bot',
+                                            new Buffer(JSON.stringify(message)).toString('base64'), {
+                                                //visibilityTimeout: 10     // Visible after 10 seconds
+                                                //messageTTL: 60 * 60 // Expires after 60 secs
+                                            }
+                                            //{}
+                                        )
+                                    })
+                                    .then((msg) => {
+                                        console.log('Message queued for bot. Response: ' + msg);
+                                    })
 
 
                                 /*
