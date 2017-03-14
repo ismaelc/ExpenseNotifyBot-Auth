@@ -116,10 +116,10 @@ app.get('/oauth2callback_concur', function(request, response) {
                                         'welcome': error
                                     });
                                 });
+                        // There's DB, but is there a Concur token?
+                        // Replace it if it exists
                         } else {
-                            // There's DB, but is there a Concur token?
-                            // If no, add it
-
+                            
                             var bot_doc = doc_arr[0];
 
                             bot_doc.concur_token = token;
@@ -168,7 +168,7 @@ app.get('/oauth2callback_concur', function(request, response) {
                                             response.render('pages/welcome', {
                                                 'welcome': error
                                             });
-                                        });                                        
+                                        });
                                 })
                                 .catch((error) => {
                                     //exit(`Completed with error ${JSON.stringify(error)}`)
