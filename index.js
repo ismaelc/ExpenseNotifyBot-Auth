@@ -45,7 +45,7 @@ app.get('/oauth2callback_concur', function(request, response) {
             else {
                 console.log('Concur token: ' + JSON.stringify(token));
                 response.render('pages/welcome', {
-                    'welcome': 'Concur token: ' + token
+                    'welcome': 'Concur token: ' + JSON.stringify(token)
                 })
             }
         })
