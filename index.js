@@ -37,143 +37,154 @@ app.get('/oauth2callback_concur', function(request, response) {
         console.log('State: ' + JSON.stringify(state));
 
         concur.getToken(code, function(err, token) {
-            if(err) {
+            if (err) {
                 response.render('pages/welcome', {
                     'welcome': 'No welcome! Error!: ' + err
                 });
-            }
-            else {
+            } else {
                 console.log('Concur token: ' + JSON.stringify(token));
-                response.render('pages/welcome', {
-                    'welcome': 'Concur token: ' + JSON.stringify(token)
-                })
+
+                //response.render('pages/welcome', {
+                //    'welcome': 'Concur token: ' + JSON.stringify(token)
+                //})
+
+                // check DB w similar address from state
+                // check if concur token exists
+                // if token missing, add it to DB
+
+                // At this point, state = address. To be used to send msg to bot
+                var address = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
+
+                // Get/create database
+                db.getDatabase()
+                    // Get/create collection
+                    .then(() => db.getCollection())
+                    .then(() => {
+                        // Query db based on passed state - token/channelId/serviceUrl
+                        return db.queryCollection(
+                            //auth_doc.google_auth.credentials.access_token
+                            address.serviceUrl,
+                            address.channelId,
+                            address.user.id
+                        );
+                    }) // Get matching token/doc
+                    .then((doc_arr) => {
+
+                        // No entry means need to login to Gmail first
+                        if (doc_arr.length == 0) {
+                            var payload = {
+                                'origin': 'auth_page',
+                                'intent': 'login_request_google'
+                            };
+
+                            var message = {
+                                'address': address,
+                                'payload': payload
+                            }
+
+                            var queue = new azure.Queue({
+                                accountId: process.env['STORAGE_ACCOUNTID'],
+                                accessKey: process.env['STORAGE_ACCESSKEY']
+                            });
+
+                            // Create queue and insert message
+                            queue.createQueue('js-queue-items-for-bot')
+                                .then(function() {
+                                    return queue.putMessage('js-queue-items-for-bot',
+                                        new Buffer(JSON.stringify(message)).toString('base64'), {
+                                            //visibilityTimeout: 10     // Visible after 10 seconds
+                                            //messageTTL: 60 * 60 // Expires after 60 secs
+                                        }
+                                        //{}
+                                    )
+                                })
+                                .then((msg) => {
+                                    console.log('Message queued for bot. Response: ' + msg);
+                                })
+                                .then(() => {
+                                    // send message to bot through queue
+                                    response.render('pages/welcome', {
+                                        'welcome': 'You need to login to Google first'
+                                    });
+                                })
+                                .catch((error) => {
+                                    //exit(`Completed with error ${JSON.stringify(error)}`)
+                                    //session.send('Completed with error ' + JSON.stringify(error));
+                                    console.log('Completed with error: ' + JSON.stringify(error));
+                                    //res.redirect('/');
+                                    response.render('pages/welcome', {
+                                        'welcome': error
+                                    });
+                                });
+                        } else {
+                            // There's DB, but is there a Concur token?
+                            // If no, add it
+
+                            var bot_doc = doc_arr[0];
+
+                            bot_doc.concur_token = token;
+                            db.replaceAuthDocument(doc_arr[0], bot_doc)
+                                .then(() => {
+                                    var payload = {
+                                        'origin': 'bot',
+                                        'intent': 'login'
+                                    };
+
+                                    var message = {
+                                        'address': address,
+                                        'payload': payload
+                                    }
+
+                                    var queue = new azure.Queue({
+                                        accountId: process.env['STORAGE_ACCOUNTID'],
+                                        accessKey: process.env['STORAGE_ACCESSKEY']
+                                    });
+
+                                    // Create queue and insert message
+                                    queue.createQueue('js-queue-items-for-bot')
+                                        .then(function() {
+                                            return queue.putMessage('js-queue-items-for-bot',
+                                                new Buffer(JSON.stringify(message)).toString('base64'), {
+                                                    //visibilityTimeout: 10     // Visible after 10 seconds
+                                                    //messageTTL: 60 * 60 // Expires after 60 secs
+                                                }
+                                                //{}
+                                            )
+                                        })
+                                        .then((msg) => {
+                                            console.log('Message queued for bot. Response: ' + msg);
+                                        })
+                                        .then(() => {
+                                            // send message to bot through queue
+                                            response.render('pages/welcome', {
+                                                'welcome': 'Concur user, you are signed in!'
+                                            });
+                                        })
+                                        .catch((error) => {
+                                            //exit(`Completed with error ${JSON.stringify(error)}`)
+                                            //session.send('Completed with error ' + JSON.stringify(error));
+                                            console.log('Completed with error: ' + JSON.stringify(error));
+                                            //res.redirect('/');
+                                            response.render('pages/welcome', {
+                                                'welcome': error
+                                            });
+                                        });                                        
+                                })
+                                .catch((error) => {
+                                    //exit(`Completed with error ${JSON.stringify(error)}`)
+                                    //session.send('Completed with error ' + JSON.stringify(error));
+                                    console.log('Completed with error: ' + JSON.stringify(error));
+                                    //res.redirect('/');
+                                    response.render('pages/welcome', {
+                                        'welcome': error
+                                    });
+                                });
+                        }
+
+                    })
+
             }
         })
-
-        // check DB w similar address from state
-        // check if concur token exists
-        // if token missing, add it to DB
-
-        // At this point, state = address. To be used to send msg to bot
-        var address = JSON.parse(new Buffer(state, 'base64').toString('ascii'));
-
-        /*
-        // Get/create database
-        db.getDatabase()
-            // Get/create collection
-            .then(() => db.getCollection())
-            .then(() => {
-                // Query db based on passed state - token/channelId/serviceUrl
-                return db.queryCollection(
-                    //auth_doc.google_auth.credentials.access_token
-                    address.serviceUrl,
-                    address.channelId,
-                    address.user.id
-                );
-            }) // Get matching token/doc
-            .then((doc_arr) => {
-
-                // No entry means need to login to Gmail first
-                if (doc_arr.length == 0) {
-                    var payload = {
-                        'origin': 'auth_page',
-                        'intent': 'login_request_google'
-                    };
-
-                    var message = {
-                        'address': address,
-                        'payload': payload
-                    }
-
-                    var queue = new azure.Queue({
-                        accountId: process.env['STORAGE_ACCOUNTID'],
-                        accessKey: process.env['STORAGE_ACCESSKEY']
-                    });
-
-                    // Create queue and insert message
-                    queue.createQueue('js-queue-items-for-bot')
-                        .then(function() {
-                            return queue.putMessage('js-queue-items-for-bot',
-                                new Buffer(JSON.stringify(message)).toString('base64'), {
-                                    //visibilityTimeout: 10     // Visible after 10 seconds
-                                    //messageTTL: 60 * 60 // Expires after 60 secs
-                                }
-                                //{}
-                            )
-                        })
-                        .then((msg) => {
-                            console.log('Message queued for bot. Response: ' + msg);
-                        })
-                        .then(() => {
-                            // send message to bot through queue
-                            response.render('pages/welcome', {
-                                'welcome': 'You need to login to Google first'
-                            });
-                        })
-                        .catch((error) => {
-                            //exit(`Completed with error ${JSON.stringify(error)}`)
-                            //session.send('Completed with error ' + JSON.stringify(error));
-                            console.log('Completed with error: ' + JSON.stringify(error));
-                            //res.redirect('/');
-                            response.render('pages/welcome', {
-                                'welcome': error
-                            });
-                        });
-                } else {
-                    // There's DB, but is there a Concur token?
-                    // If no, add it
-                    // If yes, replace it
-
-                    var payload = {
-                        'origin': 'bot',
-                        'intent': 'login'
-                    };
-
-                    var message = {
-                        'address': address,
-                        'payload': payload
-                    }
-
-                    var queue = new azure.Queue({
-                        accountId: process.env['STORAGE_ACCOUNTID'],
-                        accessKey: process.env['STORAGE_ACCESSKEY']
-                    });
-
-                    // Create queue and insert message
-                    queue.createQueue('js-queue-items-for-bot')
-                        .then(function() {
-                            return queue.putMessage('js-queue-items-for-bot',
-                                new Buffer(JSON.stringify(message)).toString('base64'), {
-                                    //visibilityTimeout: 10     // Visible after 10 seconds
-                                    //messageTTL: 60 * 60 // Expires after 60 secs
-                                }
-                                //{}
-                            )
-                        })
-                        .then((msg) => {
-                            console.log('Message queued for bot. Response: ' + msg);
-                        })
-                        .then(() => {
-                            // send message to bot through queue
-                            response.render('pages/welcome', {
-                                'welcome': 'Concur user, you are signed in!'
-                            });
-                        })
-                        .catch((error) => {
-                            //exit(`Completed with error ${JSON.stringify(error)}`)
-                            //session.send('Completed with error ' + JSON.stringify(error));
-                            console.log('Completed with error: ' + JSON.stringify(error));
-                            //res.redirect('/');
-                            response.render('pages/welcome', {
-                                'welcome': error
-                            });
-                        });
-
-                }
-
-            })
-        */
-
 
         /*
         var payload = {
