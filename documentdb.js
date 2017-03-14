@@ -105,7 +105,7 @@ function queryCollection(serviceUrl, channelId, user_id) {
     console.log(`Querying collection through index:\n${config.collection.id}`);
 
     return new Promise((resolve, reject) => {
-        var query = 'SELECT r.google_auth, r.bot_id, r.id FROM root r WHERE r.bot_id.address.user.id = "' + user_id + '"';
+        var query = 'SELECT r.google_id, r.google_last_mail_id, r.google_auth, r.bot_id, r.id FROM root r WHERE r.bot_id.address.user.id = "' + user_id + '"';
         query += ' AND r.bot_id.address.channelId = "' + channelId + '"';
         query += ' AND r.bot_id.address.serviceUrl = "' + serviceUrl + '"';
         client.queryDocuments(
